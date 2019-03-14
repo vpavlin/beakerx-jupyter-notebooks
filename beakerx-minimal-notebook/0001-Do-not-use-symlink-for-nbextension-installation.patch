@@ -1,0 +1,28 @@
+From 0aa2355b915c24ec43a529affa10d0a101f370e5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?V=C3=A1clav=20Pavl=C3=ADn?= <vaclav.pavlin@gmail.com>
+Date: Thu, 14 Mar 2019 16:45:21 -0400
+Subject: [PATCH] Do not use --symlink for nbextension installation
+
+---
+ beakerx/beakerx/install.py | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/beakerx/beakerx/install.py b/beakerx/beakerx/install.py
+index a4bd4bb2..3df43b0a 100644
+--- a/beakerx/beakerx/install.py
++++ b/beakerx/beakerx/install.py
+@@ -54,10 +54,7 @@ def _uninstall_nbextension():
+ 
+ 
+ def _install_nbextension():
+-    if sys.platform == 'win32':
+-        subprocess.check_call(["jupyter", "nbextension", "install", "beakerx", "--py", "--sys-prefix"])
+-    else:
+-        subprocess.check_call(["jupyter", "nbextension", "install", "beakerx", "--py", "--symlink", "--sys-prefix"])
++    subprocess.check_call(["jupyter", "nbextension", "install", "beakerx", "--py", "--sys-prefix"])
+ 
+     subprocess.check_call(["jupyter", "nbextension", "enable", "beakerx", "--py", "--sys-prefix"])
+ 
+-- 
+2.20.1
+

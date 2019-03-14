@@ -1,0 +1,130 @@
+{
+    "kind": "List",
+    "apiVersion": "v1",
+    "items": [
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "s2i-spark-minimal-notebook",
+                "labels": {
+                    "build": "s2i-spark-minimal-notebook"
+                }
+            },
+            "spec": {
+                "lookupPolicy": {
+                    "local": true
+                }
+            }
+        },
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "s2i-spark-minimal-notebook",
+                "labels": {
+                    "build": "s2i-spark-minimal-notebook"
+                }
+            },
+            "spec": {
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "type": "ImageChange"
+                    }
+                ],
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "https://github.com/vpavlin/jupyter-notebooks"
+                    },
+                    "contextDir": "minimal-notebook"
+                },
+                "strategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "DockerImage",
+                            "name": "quay.io/vpavlin/python36-spark-centos7:latest"
+                        }
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "s2i-spark-minimal-notebook:3.6"
+                    }
+                },
+                "resources": {
+                    "limits": {
+                        "memory": "1Gi"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "s2i-beakerx-minimal-notebook",
+                "labels": {
+                    "build": "s2i-beakerx-minimal-notebook"
+                }
+            },
+            "spec": {
+                "lookupPolicy": {
+                    "local": true
+                }
+            }
+        },
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "s2i-beakerx-minimal-notebook",
+                "labels": {
+                    "build": "s2i-beakerx-minimal-notebook"
+                }
+            },
+            "spec": {
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "type": "ImageChange"
+                    }
+                ],
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "https://github.com/vpavlin/beakerx-jupyter-notebooks"
+                    },
+                    "contextDir": "beakerx-minimal-notebook"
+                },
+                "strategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "name": "s2i-spark-minimal-notebook:3.6"
+                        }
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "s2i-beakerx-minimal-notebook:latest"
+                    }
+                },
+                "resources": {
+                    "limits": {
+                        "memory": "1Gi"
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+
+  
+#!/bin/bash
+
+set -x
+
+set -eo pipefail
+
+/opt/app-root/builder/assemble
+
+patch /opt/app-root/lib/python3.6/site-packages/beakerx/install.py 0001-Do-not-use-symlink-for-nbextension-installation.patch
+
+beakerx install
+ls /opt/app-root/share/jupyter/nbextensions/beakerx
+
+
+fix-permissions /opt/app-root

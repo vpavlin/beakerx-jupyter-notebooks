@@ -1,0 +1,3 @@
+beakerx
+ipywidgets
+tornado<6.0.0

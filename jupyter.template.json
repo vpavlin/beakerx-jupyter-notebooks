@@ -1,0 +1,214 @@
+
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "jupyter-notebook-workspace-beakerx",
+        "annotations": {
+            "openshift.io/display-name": "Jupyter Notebook Workspace (BeakerX)",
+            "description": "Template for deploying BeakerX enabled Jupyter Notebook images with persistent storage.",
+            "iconClass": "icon-python",
+            "tags": "opendatahub,jupyter",
+            "openshift.io/provider-display-name": "Open Data Hub"
+        }
+    },
+    "parameters": [
+        {
+            "name": "APPLICATION_NAME",
+            "value": "jupyter-beakerx",
+            "required": true
+        },
+        {
+            "name": "NOTEBOOK_MEMORY",
+            "value": "2Gi",
+            "required": true
+        },
+        {
+            "name": "NOTEBOOK_CPU",
+            "value": "2",
+            "required": true
+        },
+        {
+            "name": "VOLUME_SIZE",
+            "value": "2Gi",
+            "required": true
+        }
+    ],
+    "objects": [
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "apps.openshift.io/v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "app": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "app": "${APPLICATION_NAME}",
+                    "deploymentconfig": "${APPLICATION_NAME}"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app": "${APPLICATION_NAME}",
+                            "deploymentconfig": "${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "${APPLICATION_NAME}-data"
+                                }
+                            },
+                            {
+                                "name": "proxy-tls",
+                                "secret": {
+                                    "secretName": "${APPLICATION_NAME}-tls"
+                                }
+                            },
+                            {
+                                "name": "jupyter-config",
+                                "configMap": {
+                                    "name": "${APPLICATION_NAME}"
+                                }
+                            }
+                        ],
+                        "containers": [
+                            {
+                                "name": "notebook",
+                                "image": "quay.io/odh-jupyterhub/s2i-beakerx-minimal-notebook",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 8081,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "resources": {
+                                    "limits": {
+                                        "memory": "${NOTEBOOK_MEMORY}",
+                                        "cpu": "${NOTEBOOK_CPU}"
+                                    }
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "name": "data",
+                                        "mountPath": "/opt/app-root/src"
+                                    },
+                                    {
+                                        "name": "jupyter-config",
+                                        "mountPath": "/opt/app-root/src/.jupyter/jupyter_config.py",
+                                        "subPath": "jupyter_config.py"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "kind": "PersistentVolumeClaim",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}-data",
+                "annotations": {
+                },
+                "labels": {
+                    "app": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "accessModes": [
+                    "ReadWriteOnce"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${VOLUME_SIZE}"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "app": "${APPLICATION_NAME}"
+                },
+                "annotations": {
+                    "service.alpha.openshift.io/serving-cert-secret-name": "${APPLICATION_NAME}-tls"
+                }
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "8080-tcp",
+                        "protocol": "TCP",
+                        "port": 8080,
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "app": "${APPLICATION_NAME}",
+                    "deploymentconfig": "${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "route.openshift.io/v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "app": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "host": "",
+                "to": {
+                    "kind": "Service",
+                    "name": "${APPLICATION_NAME}",
+                    "weight": 100
+                },
+                "port": {
+                    "targetPort": "8080-tcp"
+                },
+                "tls": {
+                    "termination": "Edge",
+                    "insecureEdgeTerminationPolicy": "Redirect"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "app": "${APPLICATION_NAME}"
+                }
+            },
+            "data": {
+                "jupyter_config.py": "c.NotebookApp.token = '';c.NotebookApp.allow_remote_access  = True"
+            }
+        }
+    ]
+}
